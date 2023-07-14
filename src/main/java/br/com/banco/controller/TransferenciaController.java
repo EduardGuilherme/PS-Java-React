@@ -22,10 +22,6 @@ public class TransferenciaController {
 	@Autowired
 	private TransferenciaRepository transferenciaRepository;
 	
-	@GetMapping("/")
-	public List<Transferencia> listarTransacoes() {
-        return transferenciaRepository.findAll();
-    }
 	@GetMapping("/buscardados")
     public ResponseEntity<List<Transferencia>> listarTransferencias(
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate inicio,
