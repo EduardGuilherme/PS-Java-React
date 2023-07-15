@@ -3,11 +3,12 @@ package br.com.banco.controller;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,24 +24,42 @@ public class TransferenciaController {
 	private TransferenciaRepository transferenciaRepository;
 	
 	@GetMapping("/buscardados")
+	@CrossOrigin(origins = "*")
     public ResponseEntity<List<Transferencia>> listarTransferencias(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate inicio,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate fim,
+    		@RequestParam(required = false) String inicio,
+            @RequestParam(required = false) String fim,
             @RequestParam(required = false) String nomeOperadorTransacao) {
 
-        LocalDateTime inicioDateTime = inicio != null ? inicio.atStartOfDay() : null;
-        LocalDateTime fimDateTime = fim != null ? fim.atTime(LocalTime.MAX) : null;
+        LocalDateTime inicioDateTime = null;
+        LocalDateTime fimDateTime = null;
 
-        List<Transferencia> transferencias = null;
+        if (inicio != null && !inicio.isEmpty()) {
+            inicioDateTime = LocalDate.parse(inicio, DateTimeFormatter.ofPattern("dd/MM/yyyy")).atStartOfDay();
+        }
+
+        if (fim != null && !fim.isEmpty()) {
+            fimDateTime = LocalDate.parse(fim, DateTimeFormatter.ofPattern("dd/MM/yyyy")).atTime(LocalTime.MAX);
+        }
+
+        List<Transferencia> transferencias;
 
         if (inicioDateTime != null && fimDateTime != null && nomeOperadorTransacao != null) {
             transferencias = transferenciaRepository.findByDataTransferenciaBetweenAndNomeOperadorTransacao(
                     inicioDateTime, fimDateTime, nomeOperadorTransacao);
-        } else if (inicioDateTime != null && fimDateTime != null) {
+        } else if (inicioDateTime != null && fimDateTime == null && nomeOperadorTransacao == null) {
+            
+            transferencias = transferenciaRepository.findByDataTransferenciaInicio(inicioDateTime);
+        } else if (fimDateTime != null && inicioDateTime == null && nomeOperadorTransacao == null) {
+            
+            transferencias = transferenciaRepository.findByDataTransferenciaFim(fimDateTime);
+        } else if (inicioDateTime != null && fimDateTime != null && nomeOperadorTransacao == null) {
+            
             transferencias = transferenciaRepository.findByDataTransferenciaBetween(inicioDateTime, fimDateTime);
-        } else if (nomeOperadorTransacao != null) {
+        } else if (nomeOperadorTransacao != null && inicioDateTime == null && fimDateTime == null) {
+            
             transferencias = transferenciaRepository.findByNomeOperadorTransacao(nomeOperadorTransacao);
         } else {
+            
             transferencias = transferenciaRepository.findAll();
         }
 
